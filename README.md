@@ -1,4 +1,4 @@
-<img width="1861" height="924" alt="image" src="https://github.com/user-attachments/assets/dc8ec0fd-8030-4549-aba9-0425731dd6ba" /># 🤖 AI Code Review Assistant
+# 🤖 AI Code Review Assistant
 
 An intelligent, context-aware code review bot that integrates with GitHub pull requests.  
 It understands your code, flags security issues, suggests architectural improvements, and provides actionable feedback — all powered by a large language model.
