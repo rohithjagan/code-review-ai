@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Code Quality Dashboard</title>
+    <!-- Inter font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0A0A0A;
+            color: #F5F5F5;
+        }
+        .card {
+            background-color: #141414;
+            border: 1px solid #2A2A2A;
+            border-radius: 16px;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+        .card:hover {
+            border-color: #3A3A3A;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+        }
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            line-height: 1.2;
+            background: linear-gradient(180deg, #FFFFFF 0%, #A0A0A0 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .skeleton {
+            background: linear-gradient(90deg, #1E1E1E 25%, #2A2A2A 50%, #1E1E1E 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+            border-radius: 8px;
+        }
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+        .fade-in {
+            animation: fadeIn 0.3s ease-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #0A0A0A; }
+        ::-webkit-scrollbar-thumb { background: #2A2A2A; border-radius: 3px; }
+    </style>
+</head>
+<body class="p-6 md:p-8 lg:p-12 min-h-screen">
+
+    <!-- Header -->
+    <header class="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
+        <div>
+            <h1 class="text-2xl font-semibold tracking-tight text-white">Code Quality</h1>
+            <p class="text-sm text-neutral-400 mt-1">AI‑powered review insights across all repositories</p>
+        </div>
+        <div class="flex items-center gap-3">
+            <span class="text-sm text-neutral-400">👤 Your Bot</span>
+        </div>
+    </header>
+
+    <!-- Stats Grid (Summary Cards) -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8" id="statsGrid">
+        <!-- Skeleton loaders -->
+        <div class="card p-5">
+            <div class="skeleton h-4 w-24 mb-3"></div>
+            <div class="skeleton h-8 w-16"></div>
+        </div>
+        <div class="card p-5">
+            <div class="skeleton h-4 w-24 mb-3"></div>
+            <div class="skeleton h-8 w-16"></div>
+        </div>
+        <div class="card p-5">
+            <div class="skeleton h-4 w-24 mb-3"></div>
+            <div class="skeleton h-8 w-16"></div>
+        </div>
+        <div class="card p-5">
+            <div class="skeleton h-4 w-24 mb-3"></div>
+            <div class="skeleton h-8 w-16"></div>
+        </div>
+    </div>
+
+    <!-- Charts row -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-8">
+        <div class="card p-6">
+            <h2 class="text-sm font-medium text-neutral-400 uppercase tracking-wider mb-4">Issues by Category</h2>
+            <div class="relative" style="height: 300px;">
+                <canvas id="categoryChart"></canvas>
+            </div>
+        </div>
+        <div class="card p-6">
+            <h2 class="text-sm font-medium text-neutral-400 uppercase tracking-wider mb-4">Severity Distribution</h2>
+            <div class="relative" style="height: 300px;">
+                <canvas id="severityChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Trend chart -->
+    <div class="card p-6 mb-8">
+        <h2 class="text-sm font-medium text-neutral-400 uppercase tracking-wider mb-4">Issues Over Time</h2>
+        <div class="relative" style="height: 280px;">
+            <canvas id="trendChart"></canvas>
+        </div>
+        <!-- Empty state overlay if no data -->
+        <div id="trendEmpty" class="hidden absolute inset-0 flex flex-col items-center justify-center text-neutral-500">
+            <svg class="w-12 h-12 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+            </svg>
+            <p class="text-sm">No review data yet</p>
+        </div>
+    </div>
+
+    <!-- Recent Reviews Table -->
+    <div class="card p-6">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-sm font-medium text-neutral-400 uppercase tracking-wider">Recent Reviews</h2>
+            <span class="text-xs text-neutral-500">Last 20</span>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm" id="reviewsTable">
+                <thead>
+                    <tr class="text-left text-neutral-500 uppercase text-xs tracking-wider border-b border-neutral-800">
+                        <th class="pb-3 pr-4 font-medium">PR</th>
+                        <th class="pb-3 pr-4 font-medium">Title</th>
+                        <th class="pb-3 pr-4 font-medium">Author</th>
+                        <th class="pb-3 pr-4 font-medium">Date</th>
+                        <th class="pb-3 font-medium text-right">Issues</th>
+                    </tr>
+                </thead>
+                <tbody id="reviewsBody">
+                    <!-- Skeleton rows -->
+                    <tr class="border-b border-neutral-800">
+                        <td class="py-3 pr-4"><span class="skeleton h-4 w-16 inline-block"></span></td>
+                        <td class="py-3 pr-4"><span class="skeleton h-4 w-40 inline-block"></span></td>
+                        <td class="py-3 pr-4"><span class="skeleton h-4 w-20 inline-block"></span></td>
+                        <td class="py-3 pr-4"><span class="skeleton h-4 w-24 inline-block"></span></td>
+                        <td class="py-3 text-right"><span class="skeleton h-4 w-8 inline-block"></span></td>
+                    </tr>
+                    <tr class="border-b border-neutral-800">
+                        <td class="py-3 pr-4"><span class="skeleton h-4 w-16 inline-block"></span></td>
+                        <td class="py-3 pr-4"><span class="skeleton h-4 w-36 inline-block"></span></td>
+                        <td class="py-3 pr-4"><span class="skeleton h-4 w-20 inline-block"></span></td>
+                        <td class="py-3 pr-4"><span class="skeleton h-4 w-24 inline-block"></span></td>
+                        <td class="py-3 text-right"><span class="skeleton h-4 w-8 inline-block"></span></td>
+                    </tr>
+                    <tr class="border-b border-neutral-800">
+                        <td class="py-3 pr-4"><span class="skeleton h-4 w-16 inline-block"></span></td>
+                        <td class="py-3 pr-4"><span class="skeleton h-4 w-32 inline-block"></span></td>
+                        <td class="py-3 pr-4"><span class="skeleton h-4 w-20 inline-block"></span></td>
+                        <td class="py-3 pr-4"><span class="skeleton h-4 w-24 inline-block"></span></td>
+                        <td class="py-3 text-right"><span class="skeleton h-4 w-8 inline-block"></span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div id="tableEmpty" class="hidden py-12 text-center text-neutral-500">
+            <svg class="w-10 h-10 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/>
+            </svg>
+            <p class="text-sm">No reviews recorded yet</p>
+        </div>
+    </div>
+
+
+    <script>
+        // Helper to format date
+        function formatDate(isoString) {
+            const date = new Date(isoString);
+            return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        }
+
+        // Fetch stats and populate dashboard
+        async function loadDashboard() {
+            try {
+                const [statsRes, reviewsRes] = await Promise.all([
+                    fetch('/api/stats'),
+                    fetch('/api/reviews')
+                ]);
+                const stats = await statsRes.json();
+                const reviews = await reviewsRes.json();
+
+                updateSummaryCards(stats);
+                renderCharts(stats);
+                renderReviewsTable(reviews);
+            } catch (error) {
+                console.error('Failed to load dashboard data:', error);
+                // Show fallback error state (could be improved)
+                document.getElementById('statsGrid').innerHTML = '<div class="col-span-full text-center text-neutral-500 py-8">Failed to load stats.</div>';
+            }
+        }
+
+        function updateSummaryCards(stats) {
+            const grid = document.getElementById('statsGrid');
+            grid.innerHTML = '';
+
+            const cards = [
+                { label: 'Total Reviews', value: stats.total_reviews },
+                { label: 'Total Issues Found', value: stats.total_suggestions },
+                { label: 'Repositories', value: new Set((stats.trend || [])).size || '-' }, // simplistic
+                { label: 'Avg Issues/PR', value: stats.total_reviews ? (stats.total_suggestions / stats.total_reviews).toFixed(1) : 0 }
+            ];
+
+            // Real values: repos count? We don't have that in stats, could add. Use '-' or calculate from reviews list.
+            // For now keep simple: Repos = '-' or from trend if needed. Let's compute from reviews we'll fetch later.
+            // We'll update after we have reviews.
+            // But we can do a quick calculation using a data attribute or just put 'Multiple'.
+            const tempRepoCount = stats.total_reviews ? '—' : '0';
+            cards[2].value = tempRepoCount;
+
+            cards.forEach(card => {
+                const div = document.createElement('div');
+                div.className = 'card p-5 fade-in';
+                div.innerHTML = `
+                    <h3 class="text-xs font-medium text-neutral-500 uppercase tracking-wider mb-1">${card.label}</h3>
+                    <p class="stat-value">${card.value}</p>
+                `;
+                grid.appendChild(div);
+            });
+
+            // Update repo count with actual distinct repos from reviews
+            fetch('/api/reviews').then(r => r.json()).then(revs => {
+                const repos = new Set(revs.map(r => r.repo_full_name));
+                const repoCard = grid.children[2];
+                if (repoCard) {
+                    repoCard.querySelector('.stat-value').textContent = repos.size || 0;
+                }
+            });
+        }
+
+        function renderCharts(stats) {
+            // Category bar chart
+            const catCtx = document.getElementById('categoryChart').getContext('2d');
+            const catLabels = Object.keys(stats.category_counts || {});
+            const catData = Object.values(stats.category_counts || {});
+            const catColors = {
+                'security': '#EF4444',
+                'performance': '#F59E0B',
+                'maintainability': '#10B981',
+                'architecture': '#8B5CF6',
+                'bug': '#EC4899',
+            };
+
+            new Chart(catCtx, {
+                type: 'bar',
+                data: {
+                    labels: catLabels,
+                    datasets: [{
+                        label: 'Issues',
+                        data: catData,
+                        backgroundColor: catLabels.map(label => catColors[label] || '#6B7280'),
+                        borderRadius: 6,
+                        borderSkipped: false,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { backgroundColor: '#1F1F1F', titleColor: '#F5F5F5', bodyColor: '#D1D5DB' }
+                    },
+                    scales: {
+                        x: { grid: { color: '#2A2A2A' }, ticks: { color: '#A0A0A0' } },
+                        y: { grid: { color: '#2A2A2A' }, ticks: { color: '#A0A0A0', stepSize: 1 } }
+                    }
+                }
+            });
+
+            // Severity doughnut chart
+            const sevCtx = document.getElementById('severityChart').getContext('2d');
+            const sevLabels = Object.keys(stats.severity_counts || {});
+            const sevData = Object.values(stats.severity_counts || {});
+            new Chart(sevCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: sevLabels,
+                    datasets: [{
+                        data: sevData,
+                        backgroundColor: ['#EF4444', '#F59E0B', '#10B981'],
+                        borderColor: '#141414',
+                        borderWidth: 2,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: { color: '#D1D5DB', padding: 16, usePointStyle: true }
+                        },
+                        tooltip: { backgroundColor: '#1F1F1F', titleColor: '#F5F5F5', bodyColor: '#D1D5DB' }
+                    }
+                }
+            });
+
+            // Trend line chart
+            const trendCtx = document.getElementById('trendChart').getContext('2d');
+            const trendDates = (stats.trend || []).map(t => t.date);
+            const trendCounts = (stats.trend || []).map(t => t.count);
+            if (trendDates.length === 0) {
+                document.getElementById('trendEmpty').classList.remove('hidden');
+            } else {
+                document.getElementById('trendEmpty').classList.add('hidden');
+                new Chart(trendCtx, {
+                    type: 'line',
+                    data: {
+                        labels: trendDates,
+                        datasets: [{
+                            label: 'Issues found',
+                            data: trendCounts,
+                            borderColor: '#3B82F6',
+                            backgroundColor: 'rgba(59,130,246,0.05)',
+                            borderWidth: 2,
+                            pointBackgroundColor: '#3B82F6',
+                            pointRadius: 3,
+                            pointHoverRadius: 5,
+                            tension: 0.3,
+                            fill: true,
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: { backgroundColor: '#1F1F1F', titleColor: '#F5F5F5', bodyColor: '#D1D5DB' }
+                        },
+                        scales: {
+                            x: { grid: { color: '#2A2A2A' }, ticks: { color: '#A0A0A0' } },
+                            y: { grid: { color: '#2A2A2A' }, ticks: { color: '#A0A0A0', stepSize: 1 } }
+                        }
+                    }
+                });
+            }
+        }
+
+        function renderReviewsTable(reviews) {
+            const tbody = document.getElementById('reviewsBody');
+            const emptyDiv = document.getElementById('tableEmpty');
+            tbody.innerHTML = '';
+
+            if (!reviews || reviews.length === 0) {
+                emptyDiv.classList.remove('hidden');
+                return;
+            }
+            emptyDiv.classList.add('hidden');
+
+            reviews.reverse().forEach(review => {  // most recent first
+                const tr = document.createElement('tr');
+                tr.className = 'border-b border-neutral-800 hover:bg-neutral-900 transition-colors';
+                const issuesCount = review.suggestions?.length || 0;
+                tr.innerHTML = `
+                    <td class="py-3 pr-4 text-neutral-300 font-mono text-xs">#${review.pr_number}</td>
+                    <td class="py-3 pr-4 text-neutral-200 max-w-[200px] truncate">${escapeHtml(review.pr_title) || 'Untitled'}</td>
+                    <td class="py-3 pr-4 text-neutral-400">${escapeHtml(review.author) || 'unknown'}</td>
+                    <td class="py-3 pr-4 text-neutral-500 text-xs">${formatDate(review.timestamp)}</td>
+                    <td class="py-3 text-right">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${issuesCount > 0 ? 'bg-red-900/40 text-red-300' : 'bg-green-900/40 text-green-300'}">
+                            ${issuesCount}
+                        </span>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function escapeHtml(text) {
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return text.replace(/[&<>"']/g, m => map[m]);
+        }
+
+        // Kick off loading
+        window.addEventListener('DOMContentLoaded', loadDashboard);
+    </script>
+</body>
+</html>
