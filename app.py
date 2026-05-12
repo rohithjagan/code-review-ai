@@ -87,6 +87,16 @@ def dashboard():
     return app.send_static_file('dashboard.html')
 
 
+# Optional diagnostic route – use it once, then remove
+@app.route("/test-dashboard")
+def test_dashboard():
+    static_path = os.path.join(app.root_path, 'static', 'dashboard.html')
+    if os.path.exists(static_path):
+        return jsonify({"status": "file found", "path": static_path})
+    else:
+        return jsonify({"status": "file NOT found", "path": static_path}), 404
+
+
 def handle_pr(data):
     try:
         installation_id = data["installation"]["id"]
