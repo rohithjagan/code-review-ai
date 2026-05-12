@@ -3,7 +3,7 @@
 ## Reporting a Vulnerability
 
 If you discover a security vulnerability in this project, **please do not open a public issue**.  
-Instead, send a detailed report to [your-email@example.com] **privately**.
+Instead, send a detailed report to [rohithjagan25@gmail.com] **privately**.
 
 We will acknowledge your email within 48 hours, and will send a more detailed response within 5 working days indicating the next steps in handling your report.
 
