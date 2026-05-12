@@ -1,11 +1,13 @@
-# 🤖 AI Code Review Assistant
+<img width="1861" height="924" alt="image" src="https://github.com/user-attachments/assets/dc8ec0fd-8030-4549-aba9-0425731dd6ba" /># 🤖 AI Code Review Assistant
 
 An intelligent, context-aware code review bot that integrates with GitHub pull requests.  
 It understands your code, flags security issues, suggests architectural improvements, and provides actionable feedback — all powered by a large language model.
 
-> **Live demo:** [https://code-review-ai.onrender.com](https://code-review-ai.onrender.com) (dashboard)
+> **Live demo:** [https://code-review-ai.onrender.com](https://code-review-ai-fso4.onrender.com/dashboard) (dashboard)
 
-![Dashboard screen](static/dashboard-preview.png) <!-- add a screenshot later -->
+<img width="1861" height="923" alt="image" src="https://github.com/user-attachments/assets/76f4338e-7b3f-4d2e-bbc6-2bef3d704172" />
+<img width="1860" height="923" alt="image" src="https://github.com/user-attachments/assets/8aa84590-11f1-45a7-b8d6-37f5402f46ff" />
+ <!-- add a screenshot later -->
 
 ## ✨ Features
 
